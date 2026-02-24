@@ -28,6 +28,16 @@ class TokenGetter(object):
             "client": "pixiv-android",
         }
 
+    def regenerate_pkce(self):
+        """重新生成 PKCE 参数，用于重试登录时确保 code_verifier 和 code_challenge 匹配。"""
+        self.code = ""
+        self.code_verifier, self.code_challenge = self.oauth_pkce(self.s256)
+        self.login_params = {
+            "code_challenge": self.code_challenge,
+            "code_challenge_method": "S256",
+            "client": "pixiv-android",
+        }
+
     def s256(self, data):
         """S256 transformation method."""
 
@@ -67,8 +77,9 @@ class TokenGetter(object):
             code = input("Code: ").strip()
         self.code = code
 
+        token_url = "%s/auth/token" % host
         response = self.requests.post(
-            "%s/auth/token" % host,
+            token_url,
             data={
                 "client_id": CLIENT_ID,
                 "client_secret": CLIENT_SECRET,
@@ -85,7 +96,10 @@ class TokenGetter(object):
         rst = response.json()
         if "access_token" in rst and "refresh_token" in rst:
             return rst["access_token"], rst["refresh_token"], rst["user"]["id"]
-        raise Exception("Request Error.\nResponse: " + str(rst))
+        raise Exception(
+            "Request Error (HTTP %d, %s).\nResponse: %s"
+            % (response.status_code, token_url, str(rst))
+        )
 
     def refresh(self, refresh_token, host=AUTH_TOKEN_URL_HOST, kw={}):
         """
