@@ -51,3 +51,4 @@ app.common.loginHelper:
     hint_intro_step_7: "7. 將「code」後面的參數輸入本程式"
     fail_code_918: "Code 錯誤。請注意程式每次啟動時要求獲取的 Code 都不同，不可重複使用之前獲取到的，且 Code 不帶有引號。"
     fail_code_1508: "Code 已過期。請在進行 Code 獲取操作時快一些。"
+    is_retry: "是否重試? 重試時需要重新打開登入連結獲取新的 Code (y / n): "

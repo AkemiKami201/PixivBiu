@@ -51,3 +51,4 @@ app.common.loginHelper:
     hint_intro_step_7: "7. Introduzca el parámetro después de [código] en este programa"
     fail_code_918: "Error de código. Tenga en cuenta que el programa requiere un código diferente cada vez que se inicia y que el código no contiene comillas."
     fail_code_1508: "Código expirado. Por favor, intenta ser un poco más rápido al realizar la operación de obtención del código."
+    is_retry: "¿Reintentar? Deberá volver a abrir el enlace de inicio de sesión para obtener un nuevo código (y / n): "

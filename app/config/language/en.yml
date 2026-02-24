@@ -51,3 +51,4 @@ app.common.loginHelper:
     hint_intro_step_7: "7. Enter the parameter after 'code' into this program"
     fail_code_918: "Code error. Note that the Code required each time the program starts is different, cannot reuse previously obtained Codes, and codes do not include quotation marks."
     fail_code_1508: "Code has expired. Please be quicker when obtaining the code."
+    is_retry: "Retry? You will need to reopen the login link to get a new Code (y / n): "

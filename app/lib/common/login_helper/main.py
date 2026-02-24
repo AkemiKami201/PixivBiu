@@ -1,7 +1,7 @@
 import requests
 
 from altfe.interface.root import interRoot
-from app.lib.common.login_helper.token import TokenGetter
+from app.lib.common.login_helper.token import AUTH_TOKEN_URL_HOST, TokenGetter
 from app.v2.utils.sprint import SPrint
 
 _ln = lambda val, header="Login Helper": print(f"[{header}] " + val if header else val)
@@ -38,7 +38,10 @@ class CommonLoginHelper(interRoot):
         :param proxy_: 代理设置，auto 为程序自动判断
         :return: bool
         """
+        self.auth_token_url = AUTH_TOKEN_URL_HOST
+
         if is_no_proxy:
+            self.proxy = ""
             return self._test_pixiv_connection(proxy="")
 
         is_pixiv_accessible = True
@@ -61,7 +64,6 @@ class CommonLoginHelper(interRoot):
 
         # For now, the bypass mode is disabled
         self.proxy = proxy
-        self.auth_token_url = self.SOME_URLS[0]
 
         if not is_silent:
             _ln(
@@ -100,9 +102,10 @@ class CommonLoginHelper(interRoot):
 
         # return False
 
-    def login(self):
+    def login(self, max_retries=3):
         """
-        登陆操作。
+        登陆操作。支持多次重试，避免用户因输入错误需要重启程序。
+        :param max_retries: 最大重试次数
         :return: tuple(access token, refresh token, user id) || tuple(false, false, false)
         """
         kw = (
@@ -110,18 +113,26 @@ class CommonLoginHelper(interRoot):
             if self.proxy != ""
             else {}
         )
-        try:
-            return self.token_getter.login(
-                host=self.auth_token_url, newCode=True, kw=kw
-            )
-        except Exception as e:
-            err = str(e)
-            if "'code': 918" in err:
-                self.STATIC.localMsger.red(self.lang("login.fail_code_918"))
-            elif "'code': 1508" in err:
-                self.STATIC.localMsger.red(self.lang("login.fail_code_1508"))
-            else:
-                self.STATIC.localMsger.error(e, header=False)
+        for attempt in range(max_retries):
+            try:
+                return self.token_getter.login(
+                    host=self.auth_token_url, newCode=True, kw=kw
+                )
+            except Exception as e:
+                err = str(e)
+                if "'code': 918" in err:
+                    self.STATIC.localMsger.red(self.lang("login.fail_code_918"))
+                elif "'code': 1508" in err:
+                    self.STATIC.localMsger.red(self.lang("login.fail_code_1508"))
+                else:
+                    self.STATIC.localMsger.error(e, header=False)
+
+                if attempt < max_retries - 1:
+                    retry = input(self.lang("login.is_retry"))
+                    if retry not in ["y", ""]:
+                        break
+                    # 重试时需要重新生成 PKCE 参数，因为之前的 code 已关联旧的 code_challenge
+                    self.token_getter.regenerate_pkce()
         return False, False, False
 
     def refresh(self, refresh_token):
@@ -176,7 +187,7 @@ class CommonLoginHelper(interRoot):
         return self.proxy
 
     def is_bypass(self) -> bool:
-        return self.auth_token_url != self.SOME_URLS[0]
+        return self.auth_token_url != AUTH_TOKEN_URL_HOST
 
     @classmethod
     def _test_access(cls, url: str, proxy: str = "", is_silent: bool = False):
